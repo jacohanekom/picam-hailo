@@ -1,0 +1,17 @@
+Package: picam-hailo
+Version: 1.0.0+202606091437
+Architecture: arm64
+Maintainer: Jaco Hanekom <jhanekom@gmail.com>
+Installed-Size: 227
+Depends: hailort (>= 4.20.0), libc6 (>= 2.34), libgcc-s1 (>= 3.0), libjpeg62-turbo (>= 1.3.1), libstdc++6 (>= 11), picam-raw
+Section: video
+Priority: optional
+Description: Hailo-8 NPU inference on raw YUV420 stream from picam-raw
+ Receives raw YUV420 UDP frames from picam-raw, runs YOLOv8 object
+ detection on the Hailo-8 NPU, and outputs newline-delimited JSON
+ detections to stdout or TCP.
+ .
+ Requires HailoRT >= 4.18 installed separately from the Hailo
+ Developer Zone.
+ .
+ Config: /etc/picam-hailo/config.ini

@@ -1,0 +1,12 @@
+Package: picam-hailo-dbgsym
+Source: picam-hailo
+Version: 1.0.0+202606091437
+Auto-Built-Package: debug-symbols
+Architecture: arm64
+Maintainer: Jaco Hanekom <jhanekom@gmail.com>
+Installed-Size: 922
+Depends: picam-hailo (= 1.0.0+202606091437)
+Section: debug
+Priority: optional
+Description: debug symbols for picam-hailo
+Build-Ids: 5662aa08a2477957cb0844243e3dc570f5f41912

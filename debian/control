@@ -1,0 +1,22 @@
+Source: picam-hailo
+Section: video
+Priority: optional
+Maintainer: Jaco Hanekom <jhanekom@gmail.com>
+Build-Depends: debhelper-compat (= 13),
+               cmake,
+               pkg-config
+Standards-Version: 4.6.2
+Rules-Requires-Root: no
+
+Package: picam-hailo
+Architecture: arm64
+Depends: ${shlibs:Depends}, ${misc:Depends}, picam-raw
+Description: Hailo-8 NPU inference on raw YUV420 stream from picam-raw
+ Receives raw YUV420 UDP frames from picam-raw, runs YOLOv8 object
+ detection on the Hailo-8 NPU, and outputs newline-delimited JSON
+ detections to stdout or TCP.
+ .
+ Requires HailoRT >= 4.18 installed separately from the Hailo
+ Developer Zone.
+ .
+ Config: /etc/picam-hailo/config.ini

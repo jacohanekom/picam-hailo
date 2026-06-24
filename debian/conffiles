@@ -1,0 +1,2 @@
+/etc/picam-hailo/config.ini
+/etc/sysctl.d/60-picam-hailo.conf

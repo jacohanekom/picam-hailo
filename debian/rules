@@ -1,0 +1,18 @@
+#!/usr/bin/make -f
+%:
+	dh $@ --buildsystem=cmake
+
+override_dh_auto_configure:
+	dh_auto_configure -- -DCMAKE_BUILD_TYPE=Release
+
+override_dh_auto_install:
+	dh_auto_install
+	install -D -m 0644 config.ini \
+		debian/picam-hailo/etc/picam-hailo/config.ini
+	install -D -m 0644 debian/picam-hailo.sysctl \
+		debian/picam-hailo/etc/sysctl.d/60-picam-hailo.conf
+	install -d debian/picam-hailo/var/lib/picam-hailo
+	install -d debian/picam-hailo/usr/share/picam-hailo/models
+
+override_dh_installsystemd:
+	dh_installsystemd --no-restart-on-upgrade --no-stop-on-upgrade

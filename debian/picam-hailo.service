@@ -1,0 +1,24 @@
+[Unit]
+Description=Hailo-8 NPU inference on picam-raw YUV420 stream
+After=network.target picam-raw.service
+Wants=picam-raw.service
+
+[Service]
+Type=simple
+User=picam-hailo
+Group=picam-hailo
+
+ExecStart=/usr/bin/raw_hailo_inference --config /etc/picam-hailo/config.ini
+
+Restart=on-failure
+RestartSec=3
+
+SupplementaryGroups=video render
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=picam-hailo
+CPUAffinity=3
+
+[Install]
+WantedBy=multi-user.target

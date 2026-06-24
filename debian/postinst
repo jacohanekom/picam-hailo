@@ -1,0 +1,28 @@
+#!/bin/sh
+set -e
+
+# Apply UDP buffer sysctl immediately
+sysctl -w net.core.rmem_max=67108864     || true
+sysctl -w net.core.rmem_default=67108864 || true
+
+# Create service user
+if ! id picam-hailo >/dev/null 2>&1; then
+    useradd -r -s /usr/sbin/nologin -G video,render picam-hailo || true
+fi
+
+mkdir -p /var/lib/picam-hailo
+chown picam-hailo:picam-hailo /var/lib/picam-hailo 2>/dev/null || true
+
+systemctl daemon-reload || true
+
+echo ""
+echo "picam-hailo installed."
+echo "  Edit config : /etc/picam-hailo/config.ini"
+echo "  Enable      : systemctl enable --now picam-hailo"
+echo ""
+echo "NOTE: HailoRT >= 4.18 must be installed separately."
+echo "  Download from: https://developer.hailo.ai"
+echo ""
+echo "NOTE: Place your compiled .hef model at:"
+echo "  /usr/share/picam-hailo/models/yolov8m.hef"
+echo "  (or update hef_path in /etc/picam-hailo/config.ini)"

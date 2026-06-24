@@ -1,0 +1,7 @@
+picam-hailo (1.0.0+202606091437) stable; urgency=low
+
+  * Initial release. Raw YUV420 UDP input from picam-raw replacing RTSP.
+  * YOLOv8 NMS output decoding with per-detection JSON output.
+  * No FFmpeg dependency — pure HailoRT + POSIX sockets.
+
+ -- Jaco Hanekom <jhanekom@gmail.com>  Tue, 09 Jun 2026 14:37:55 +0000
