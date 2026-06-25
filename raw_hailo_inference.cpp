@@ -31,7 +31,7 @@
  *   ping_every seconds. picam-raw then starts sending frames.
  *
  * Output (stdout, newline-delimited JSON per detection event):
- *   {"frame":N,"ts_us":T,"camera":{"index":I,"label":"L"},
+ *   {"frame":N,"frame_seq":S,"ts_us":T,"camera":{"index":I,"label":"L"},
  *    "detections":[{"class":"person","conf":0.92,
  *                   "box":{"x0":0.1,"y0":0.2,"x1":0.4,"y1":0.8}},...]}
  *
@@ -139,11 +139,12 @@ struct StageTimer {
 // ─────────────────────────────────────────────────────────────────────────────
 struct RawFrame {
     std::vector<uint8_t> data;       // packed YUV420: Y then U then V
-    int     width       = 0;
-    int     height      = 0;
-    int64_t timestampUs = 0;
-    uint8_t cameraIndex = 0;
-    char    cameraLabel[kLabelSize + 1] = {};
+    int      width       = 0;
+    int      height      = 0;
+    int64_t  timestampUs = 0;
+    uint32_t frameSeq    = 0;
+    uint8_t  cameraIndex = 0;
+    char     cameraLabel[kLabelSize + 1] = {};
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -318,6 +319,7 @@ private:
             rf->width  = width_;
             rf->height = height_;
 
+            rf->frameSeq = hdr.frameSeq;
             auto mit = frameMeta.find(hdr.frameSeq);
             if (mit != frameMeta.end()) {
                 rf->timestampUs = mit->second.timestampUs;
@@ -607,6 +609,7 @@ static const char* COCO_NAMES[80] = {
 
 static std::string format_detections(
         uint64_t frame_count,
+        uint32_t frame_seq,
         int64_t  timestamp_us,
         uint8_t  camera_index,
         const char* camera_label,
@@ -664,8 +667,9 @@ static std::string format_detections(
 
     std::string j;
     j.reserve(512 + dets.size() * 128);
-    j += "{\"frame\":";    j += std::to_string(frame_count);
-    j += ",\"ts_us\":";    j += std::to_string(timestamp_us);
+    j += "{\"frame\":";     j += std::to_string(frame_count);
+    j += ",\"frame_seq\":"; j += std::to_string(frame_seq);
+    j += ",\"ts_us\":";     j += std::to_string(timestamp_us);
     j += ",\"camera\":{\"index\":";
     j += std::to_string(static_cast<int>(camera_index));
     j += ",\"label\":\"";  j += camera_label; j += "\"}";
@@ -955,6 +959,7 @@ int main(int argc, char** argv) {
         tm_json.start();
         std::string json = format_detections(
             frame_count,
+            inf.frame->frameSeq,
             inf.frame->timestampUs,
             inf.frame->cameraIndex,
             inf.frame->cameraLabel,
