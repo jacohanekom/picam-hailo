@@ -33,7 +33,14 @@ target_link_libraries(raw_hailo_inference PRIVATE
 
 target_compile_options(raw_hailo_inference PRIVATE
     -O3
-    -march=native          # enables NEON SIMD on Pi 5 Cortex-A76
+    -mcpu=cortex-a76       # Pi 5's actual CPU — enables its NEON SIMD.
+                           # Explicit rather than -march=native: "native"
+                           # only happens to mean cortex-a76 when building
+                           # directly on a Pi 5 itself; anywhere else
+                           # (e.g. cross/container builds on other arm64
+                           # hardware) it would silently target the BUILD
+                           # machine's own CPU instead of the deployment
+                           # target.
     -ffast-math
     -funroll-loops
     -Wall -Wextra -pthread

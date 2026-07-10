@@ -1,0 +1,67 @@
+# Builds the picam-hailo Debian package NATIVELY for arm64, using a real
+# arm64 Docker daemon (e.g. colima on Apple Silicon, which runs a genuine
+# arm64 Linux VM — no QEMU emulation involved despite the host being a
+# Mac). Same approach as the sibling picam-raw's Dockerfile.native-arm64
+# — see that file's header for why native beats cross-compiling here
+# (avoids apt ever having to mix two architectures' packages at once).
+#
+# HailoRT is installed from archive.raspberrypi.com, same as picam-raw's
+# libcamera-dev — despite picam-hailo's own README/control file saying
+# it "requires HailoRT installed separately from the Hailo Developer
+# Zone" (implying a gated, manual download), Raspberry Pi OS actually
+# ships it as a plain public apt package (confirmed: hailort 4.20.0-1,
+# comfortably above the >= 4.18 requirement, with both the runtime
+# library and the hailo/hailort.hpp headers bundled in the one package —
+# no separate -dev package exists for it).
+#
+# Usage (from this directory, on a genuinely arm64 Docker host):
+#   docker build -f Dockerfile.native-arm64 -t picam-hailo-builder .
+#   docker create --name picam-hailo-extract picam-hailo-builder
+#   docker cp picam-hailo-extract:/out ./dist
+#   docker rm picam-hailo-extract
+
+FROM debian:bookworm-slim AS build
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        debhelper \
+        devscripts \
+        cmake \
+        pkg-config \
+        curl \
+        gnupg \
+        ca-certificates \
+    && curl -fsSL -o /tmp/rpi.gpg.key https://archive.raspberrypi.com/debian/raspberrypi.gpg.key \
+    && gpg --dearmor -o /usr/share/keyrings/raspberrypi.gpg /tmp/rpi.gpg.key \
+    && rm -f /tmp/rpi.gpg.key \
+    && echo 'deb [signed-by=/usr/share/keyrings/raspberrypi.gpg] https://archive.raspberrypi.com/debian/ bookworm main' \
+        > /etc/apt/sources.list.d/raspberrypi.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends hailort \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src
+COPY . .
+
+# Stamp a build-time version (base version + UTC date/time as a Debian
+# local-version suffix — see picam-orchestrator-go/Dockerfile.build for
+# the rationale). No "-1" revision suffix here, unlike picam-raw: this
+# package's debian/source/format is "3.0 (native)" with no debian
+# revision in its checked-in version (1.0.0+202606091437, no trailing
+# "-N"), so the stamped version follows that same convention. Timestamp
+# is a plain contiguous digit run (YYYYMMDDHHMMSS, no separator) for the
+# same reason as picam-raw: this changelog already embeds a compact
+# undotted timestamp, and dpkg compares maximal digit runs as
+# arbitrary-precision integers — a dot would end that run early and make
+# a chronologically later build compare as an EARLIER version.
+RUN set -e; \
+    BASEVER="$(dpkg-parsechangelog -S Version | sed -E 's/\+.*//')"; \
+    TS="$(date -u +%Y%m%d%H%M%S)"; \
+    DEBEMAIL="jhanekom@gmail.com" DEBFULLNAME="Jaco Hanekom" \
+        dch --newversion "${BASEVER}+${TS}" --distribution stable --force-distribution \
+        "Automated native arm64 build (UTC ${TS})."; \
+    dpkg-buildpackage -us -uc -b
+
+# Build artifacts land one directory above the source tree by default
+# for "3.0 (native)" format source packages.
+RUN mkdir -p /out && cp /*.deb /*.changes /*.buildinfo /out/ 2>/dev/null || cp /*.deb /out/
