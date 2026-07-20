@@ -721,6 +721,18 @@ int main(int argc, char** argv) {
 
     Config cfg(cfg_path);
 
+    // picam-raw's wire protocol carries no width/height field, so this
+    // process's view of the lores stream's geometry/port must already
+    // agree with what picam-raw actually sends. /etc/aipicam/streams.conf
+    // (aipicam-config package) is the single shared source of truth for
+    // that instead of each reader hand-copying its own possibly-stale
+    // default; config.ini's own explicit values still win if set.
+    cfg.merge_defaults("/etc/aipicam/streams.conf", {
+        {"input.width",  "stream.lores_width"},
+        {"input.height", "stream.lores_height"},
+        {"input.port",   "stream.lores_port"},
+    });
+
     const std::string hef_path      = cfg.get_str("hailo.hef_path");
     const int         pipeline_depth= cfg.get_int("hailo.pipeline_depth", 4);
     const double      fps_limit     = cfg.get_double("hailo.fps_limit", 30.0);

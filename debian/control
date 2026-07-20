@@ -10,7 +10,7 @@ Rules-Requires-Root: no
 
 Package: picam-hailo
 Architecture: arm64
-Depends: ${shlibs:Depends}, ${misc:Depends}, picam-raw
+Depends: ${shlibs:Depends}, ${misc:Depends}, picam-raw, aipicam-config
 Description: Hailo-8 NPU inference on raw YUV420 stream from picam-raw
  Receives raw YUV420 UDP frames from picam-raw, runs YOLOv8 object
  detection on the Hailo-8 NPU, and outputs newline-delimited JSON

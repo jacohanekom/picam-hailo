@@ -17,6 +17,8 @@
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
+#include <utility>
+#include <vector>
 
 class Config {
 public:
@@ -24,7 +26,30 @@ public:
         std::ifstream f(path);
         if (!f.is_open())
             throw std::runtime_error("Cannot open config: " + path);
+        store_ = parse(f, path);
+    }
 
+    // Merges values from another INI file into this config for any key
+    // not already set here, so this file's own explicit values always
+    // win. mapping is a list of (this_key, other_key) pairs, since the
+    // other file may use different section/key names than this one.
+    // Silently does nothing if path can't be opened — callers use this
+    // for an optional shared-defaults file that may not be installed.
+    void merge_defaults(const std::string &path,
+                         const std::vector<std::pair<std::string, std::string>> &mapping) {
+        std::ifstream f(path);
+        if (!f.is_open()) return;
+        auto other = parse(f, path);
+        for (const auto &[this_key, other_key] : mapping) {
+            if (store_.count(this_key)) continue;
+            auto it = other.find(other_key);
+            if (it != other.end()) store_[this_key] = it->second;
+        }
+    }
+
+private:
+    static std::unordered_map<std::string, std::string> parse(std::ifstream &f, const std::string &path) {
+        std::unordered_map<std::string, std::string> store;
         std::string line, section;
         int lineno = 0;
         while (std::getline(f, line)) {
@@ -51,10 +76,12 @@ public:
             std::string val = trim(strip_comment(line.substr(eq + 1)));
 
             if (key.empty()) continue;
-            store_[section.empty() ? key : section + "." + key] = val;
+            store[section.empty() ? key : section + "." + key] = val;
         }
+        return store;
     }
 
+public:
     // ── Typed accessors ────────────────────────────────────────────────────
     std::string get_str(const std::string &k,
                         const std::string &def = "") const {
