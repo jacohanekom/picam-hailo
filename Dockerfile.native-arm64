@@ -20,8 +20,15 @@
 #   docker cp picam-hailo-extract:/out ./dist
 #   docker rm picam-hailo-extract
 
-FROM debian:bookworm-slim AS build
+FROM debian:trixie-slim AS build
 
+# [trusted=yes]: Raspberry Pi's apt signing key has a SHA-1 self-signature
+# binding, which trixie's apt (sqv, no gpgv fallback wired in) rejects
+# outright under its post-2026-02-01 crypto policy -- there is currently no
+# way to satisfy signature verification against this repo on trixie. HTTPS
+# still applies; this only drops the extra apt-level signature check, and
+# only for this disposable build stage (never shipped, never run on a real
+# Pi). Revisit once Raspberry Pi re-signs their key for trixie.
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
         debhelper \
@@ -29,12 +36,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         cmake \
         pkg-config \
         curl \
-        gnupg \
         ca-certificates \
-    && curl -fsSL -o /tmp/rpi.gpg.key https://archive.raspberrypi.com/debian/raspberrypi.gpg.key \
-    && gpg --dearmor -o /usr/share/keyrings/raspberrypi.gpg /tmp/rpi.gpg.key \
-    && rm -f /tmp/rpi.gpg.key \
-    && echo 'deb [signed-by=/usr/share/keyrings/raspberrypi.gpg] https://archive.raspberrypi.com/debian/ bookworm main' \
+    && echo 'deb [trusted=yes] https://archive.raspberrypi.com/debian/ trixie main' \
         > /etc/apt/sources.list.d/raspberrypi.list \
     && apt-get update \
     && apt-get install -y --no-install-recommends hailort \
